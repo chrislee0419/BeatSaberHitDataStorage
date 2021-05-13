@@ -19,11 +19,6 @@ namespace BeatSaberHitDataStorage.Managers
         private byte _actionCount = 0;
         private bool _errorOccurred = false;
 
-        private const string BeatmapsTableName = "beatmaps";
-        private const string PlaysTableName = "plays";
-        private const string NoteHitsTableName = "note_hits";
-        private const string BombHitsTableName = "bomb_hits";
-
         private const byte MaxActionsPerTransaction = 100;
 
         [Inject]
@@ -78,7 +73,7 @@ namespace BeatSaberHitDataStorage.Managers
             _dbCommand.Parameters.Clear();
 
             _dbCommand.CommandText = $@"
-INSERT INTO {NoteHitsTableName}
+INSERT INTO {DatabaseSchemas.NoteHitsTableName}
 VALUES(NULL, @play_id, @time, @valid, @miss, @before, @after, @accuracy, @time_dev, @dir_dev)";
 
             _dbCommand.Parameters.AddWithValue("@play_id", _playRowID);
@@ -111,7 +106,7 @@ VALUES(NULL, @play_id, @time, @valid, @miss, @before, @after, @accuracy, @time_d
             _dbCommand.Parameters.Clear();
 
             _dbCommand.CommandText = $@"
-INSERT INTO {BombHitsTableName}
+INSERT INTO {DatabaseSchemas.BombHitsTableName}
 VALUES(NULL, @play_id, @time)";
 
             _dbCommand.Parameters.AddWithValue("@play_id", _playRowID);
@@ -123,60 +118,13 @@ VALUES(NULL, @play_id, @time)";
 
         private void PrepareDatabaseTables(SQLiteCommand dbCommand)
         {
-            if (CheckDatabaseTableExists(dbCommand, BeatmapsTableName))
+            foreach (string tableName in DatabaseSchemas.TableSchemas.Keys)
             {
-                dbCommand.CommandText = $@"
-CREATE TABLE {BeatmapsTableName}(id INTEGER PRIMARY KEY,
-                                 level_hash TEXT,
-                                 song_name TEXT,
-                                 song_author_name TEXT,
-                                 level_author_name TEXT,
-                                 length REAL,
-                                 characteristic TEXT,
-                                 difficulty TEXT,
-                                 note_count INT)";
-
-                dbCommand.ExecuteNonQuery();
-            }
-
-            if (CheckDatabaseTableExists(dbCommand, PlaysTableName))
-            {
-                dbCommand.CommandText = $@"
-CREATE TABLE {PlaysTableName}(id INTEGER PRIMARY KEY,
-                              beatmap_id INT,
-                              play_datetime TEXT,
-                              FOREIGN KEY(beatmap_id) REFERENCES {BeatmapsTableName}(id))";
-
-                dbCommand.ExecuteNonQuery();
-            }
-
-            if (CheckDatabaseTableExists(dbCommand, NoteHitsTableName))
-            {
-                dbCommand.CommandText = $@"
-CREATE TABLE {NoteHitsTableName}(id INTEGER PRIMARY KEY,
-                                 play_id INT,
-                                 time REAL,
-                                 valid_hit INT,
-                                 is_miss INT,
-                                 before_cut_score INT,
-                                 after_cut_score INT,
-                                 accuracy_score INT,
-                                 time_deviation REAL,
-                                 dir_deviation REAL,
-                                 FOREIGN KEY(play_id) REFERENCES {PlaysTableName}(id))";
-
-                dbCommand.ExecuteNonQuery();
-            }
-
-            if (CheckDatabaseTableExists(dbCommand, BombHitsTableName))
-            {
-                dbCommand.CommandText = $@"
-CREATE TABLE {BombHitsTableName}(id INTEGER PRIMARY KEY,
-                                 play_id INT,
-                                 time REAL,
-                                 FOREIGN KEY(play_id) REFERENCES {PlaysTableName}(id))";
-
-                dbCommand.ExecuteNonQuery();
+                if (CheckDatabaseTableExists(dbCommand, tableName))
+                {
+                    dbCommand.CommandText = DatabaseSchemas.CreateTableStatements[DatabaseSchemas.BeatmapsTableName];
+                    dbCommand.ExecuteNonQuery();
+                }
             }
         }
 
@@ -184,7 +132,7 @@ CREATE TABLE {BombHitsTableName}(id INTEGER PRIMARY KEY,
         {
             dbCommand.CommandText = $@"
 SELECT id
-FROM {BeatmapsTableName}
+FROM {DatabaseSchemas.BeatmapsTableName}
 WHERE level_hash=@hash AND
       characteristic=@characteristic AND
       difficulty=@difficulty";
@@ -199,7 +147,7 @@ WHERE level_hash=@hash AND
             if (result == null)
             {
                 dbCommand.CommandText = $@"
-INSERT INTO {BeatmapsTableName}
+INSERT INTO {DatabaseSchemas.BeatmapsTableName}
 VALUES(NULL, @hash, @song_name, @song_author, @level_author, @length, @characteristic, @difficulty, @note_count)";
 
                 dbCommand.Parameters.AddWithValue("@song_name", _difficultyBeatmap.level.songName);
@@ -227,7 +175,7 @@ VALUES(NULL, @hash, @song_name, @song_author, @level_author, @length, @character
         private long PrepareDatabasePlaysEntry(SQLiteCommand dbCommand)
         {
             dbCommand.CommandText = $@"
-INSERT INTO {PlaysTableName}
+INSERT INTO {DatabaseSchemas.PlaysTableName}
 VALUES(NULL, @beatmap_id, @play_datetime)";
 
             dbCommand.Parameters.AddWithValue("@beatmap_id", _beatmapRowID);

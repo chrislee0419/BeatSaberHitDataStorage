@@ -122,6 +122,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DatabaseSchemas.cs" />
     <Compile Include="Managers\HitDataManager.cs" />
     <Compile Include="Managers\DatabaseManager.cs" />
     <Compile Include="Plugin.cs" />
