@@ -1,0 +1,14 @@
+﻿{
+  "$schema": "https://raw.githubusercontent.com/bsmg/BSIPA-MetadataFileSchema/master/Schema.json",
+  "id": "HitDataStorage",
+  "name": "Hit Data Storage",
+  "author": "hello",
+  "version": "0.0.1",
+  "description": "Stores the scores of each hit for every play.",
+  "gameVersion": "1.15.0",
+  "dependsOn": {
+    "BSIPA": "^4.0.5",
+    "SongCore": "3.3.4",
+    "SiraUtil":  "2.5.3"
+  }
+}
