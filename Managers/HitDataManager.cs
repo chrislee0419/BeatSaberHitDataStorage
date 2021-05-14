@@ -44,7 +44,8 @@ namespace BeatSaberHitDataStorage.Managers
             if (noteData.cutDirection == NoteCutDirection.None || noteData.colorType == ColorType.None)
             {
                 // bomb hit
-                _playDataManager.RecordBombHitData(noteData.time);
+                if (PluginConfig.Instance.RecordBombHits)
+                    _playDataManager.RecordBombHitData(noteData.time);
             }
             else if (noteCutInfo.allIsOK)
             {
