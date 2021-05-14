@@ -74,10 +74,20 @@ namespace BeatSaberHitDataStorage.Managers
             _columnValues.Add(("before_cut_score", beforeCutScore));
             _columnValues.Add(("after_cut_score", afterCutScore));
             _columnValues.Add(("accuracy_score", accuracyScore));
-            _columnValues.Add(("time_deviation", timeDeviation));
-            _columnValues.Add(("dir_deviation", directionDeviation));
 
-            return _dbManager.InsertEntry(DatabaseSchemas.NoteHitsTableName, _columnValues);
+            long hitID = _dbManager.InsertEntry(DatabaseSchemas.NoteHitsTableName, _columnValues);
+
+            if (PluginConfig.Instance.RecordDeviations)
+            {
+                _columnValues.Clear();
+                _columnValues.Add(("hit_id", hitID));
+                _columnValues.Add(("time_deviation", timeDeviation));
+                _columnValues.Add(("dir_deviation", directionDeviation));
+
+                _dbManager.InsertEntry(DatabaseSchemas.HitDeviationsTableName, _columnValues);
+            }
+
+            return hitID;
         }
 
         public long RecordBombHitData(float time)

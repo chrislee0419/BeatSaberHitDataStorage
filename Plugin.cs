@@ -1,4 +1,6 @@
 ﻿using IPA;
+using IPA.Config;
+using IPA.Config.Stores;
 using SiraUtil.Zenject;
 using BeatSaberHitDataStorage.Installers;
 using IPALogger = IPA.Logging.Logger;
@@ -12,11 +14,13 @@ namespace BeatSaberHitDataStorage
         internal static IPALogger Log { get; private set; }
 
         [Init]
-        public Plugin(IPALogger logger, Zenjector zenjector)
+        public Plugin(IPALogger logger, Config config, Zenjector zenjector)
         {
             Instance = this;
             Plugin.Log = logger;
             Plugin.Log?.Debug("Logger initialized.");
+
+            PluginConfig.Instance = config.Generated<PluginConfig>();
 
             zenjector.OnGame<RecorderInstaller>();
         }

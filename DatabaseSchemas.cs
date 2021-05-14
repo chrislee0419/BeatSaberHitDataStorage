@@ -9,6 +9,7 @@ namespace BeatSaberHitDataStorage
         public const string PlaysTableName = "plays";
         public const string NoteHitsTableName = "note_hits";
         public const string BombHitsTableName = "bomb_hits";
+        public const string HitDeviationsTableName = "hit_deviations";
 
         public static readonly Dictionary<string, string> CreateTableStatements;
 
@@ -42,15 +43,21 @@ namespace BeatSaberHitDataStorage
                     { "is_miss", "INT" },
                     { "before_cut_score", "INT" },
                     { "after_cut_score", "INT" },
-                    { "accuracy_score", "INT" },
-                    { "time_deviation", "REAL" },
-                    { "dir_deviation", "REAL" }
+                    { "accuracy_score", "INT" }
                 }
             },
             { BombHitsTableName, new Dictionary<string, string>
                 {
                     { "play_id", "INT" },
                     { "time", "REAL" }
+                }
+            },
+
+            { HitDeviationsTableName, new Dictionary<string, string>
+                {
+                    { "hit_id", "INT" },
+                    { "time_deviation", "REAL" },
+                    { "dir_deviation", "REAL" }
                 }
             }
         };
@@ -59,7 +66,8 @@ namespace BeatSaberHitDataStorage
         {
             { PlaysTableName, ("beatmap_id", BeatmapsTableName) },
             { NoteHitsTableName, ("play_id", PlaysTableName) },
-            { BombHitsTableName, ("play_id", PlaysTableName) }
+            { BombHitsTableName, ("play_id", PlaysTableName) },
+            { HitDeviationsTableName, ("hit_id", NoteHitsTableName) }
         };
 
         static DatabaseSchemas()
