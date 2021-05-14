@@ -79,6 +79,9 @@ namespace BeatSaberHitDataStorage.Managers
             string characteristic = _difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName;
             string difficulty = _difficultyBeatmap.difficulty.SerializedName();
 
+            if (string.IsNullOrWhiteSpace(hash))
+                hash = _difficultyBeatmap.level.levelID;
+
             _columnValues.Clear();
             _columnValues.Add(("level_hash", hash));
             _columnValues.Add(("characteristic", characteristic));
