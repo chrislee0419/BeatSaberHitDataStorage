@@ -31,7 +31,8 @@ namespace BeatSaberHitDataStorage
             { PlaysTableName, new Dictionary<string, string>
                 {
                     { "beatmap_id", "INT" },
-                    { "play_datetime", "TEXT" }
+                    { "play_datetime", "TEXT" },
+                    { "completed", "INT" }
                 }
             },
 

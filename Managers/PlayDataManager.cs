@@ -5,8 +5,9 @@ using SongCore;
 
 namespace BeatSaberHitDataStorage.Managers
 {
-    internal class PlayDataManager : IInitializable
+    internal class PlayDataManager : IInitializable, IDisposable
     {
+        private ILevelEndActions _levelEndActions;
         private IDifficultyBeatmap _difficultyBeatmap;
         private DatabaseManager _dbManager;
 
@@ -16,8 +17,9 @@ namespace BeatSaberHitDataStorage.Managers
         private List<(string, object)> _columnValues = new List<(string, object)>(DatabaseSchemas.TableSchemas[DatabaseSchemas.BeatmapsTableName].Count);
 
         [Inject]
-        public PlayDataManager(IDifficultyBeatmap difficultyBeatmap, DatabaseManager databaseManager)
+        public PlayDataManager(ILevelEndActions levelEndActions, IDifficultyBeatmap difficultyBeatmap, DatabaseManager databaseManager)
         {
+            _levelEndActions = levelEndActions;
             _difficultyBeatmap = difficultyBeatmap;
             _dbManager = databaseManager;
         }
@@ -26,42 +28,14 @@ namespace BeatSaberHitDataStorage.Managers
         {
             _beatmapRowID = PrepareDatabaseBeatmapEntry();
             _playRowID = PrepareDatabasePlaysEntry();
+
+            _levelEndActions.levelFinishedEvent += OnLevelFinished;
         }
 
-        private long PrepareDatabaseBeatmapEntry()
+        public void Dispose()
         {
-            string hash = Collections.hashForLevelID(_difficultyBeatmap.level.levelID);
-            string characteristic = _difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName;
-            string difficulty = _difficultyBeatmap.difficulty.SerializedName();
-
-            _columnValues.Clear();
-            _columnValues.Add(("level_hash", hash));
-            _columnValues.Add(("characteristic", characteristic));
-            _columnValues.Add(("difficulty", difficulty));
-
-            long id = _dbManager.FindEntryID(DatabaseSchemas.BeatmapsTableName, _columnValues);
-
-            if (id < 0)
-            {
-                _columnValues.Add(("song_name", _difficultyBeatmap.level.songName));
-                _columnValues.Add(("song_author_name", _difficultyBeatmap.level.songAuthorName));
-                _columnValues.Add(("level_author_name", _difficultyBeatmap.level.levelAuthorName));
-                _columnValues.Add(("length", _difficultyBeatmap.level.songDuration));
-                _columnValues.Add(("note_count", _difficultyBeatmap.beatmapData.cuttableNotesType));
-
-                id = _dbManager.InsertEntry(DatabaseSchemas.BeatmapsTableName, _columnValues);
-            }
-
-            return id;
-        }
-
-        private long PrepareDatabasePlaysEntry()
-        {
-            _columnValues.Clear();
-            _columnValues.Add(("beatmap_id", _beatmapRowID));
-            _columnValues.Add(("play_datetime", DateTime.Now));
-
-            return _dbManager.InsertEntry(DatabaseSchemas.PlaysTableName, _columnValues);
+            if (_levelEndActions != null)
+                _levelEndActions.levelFinishedEvent -= OnLevelFinished;
         }
 
         public long RecordNoteHitData(float time, int validHit, int isMiss, int beforeCutScore, int afterCutScore, int accuracyScore, float timeDeviation, float directionDeviation)
@@ -97,6 +71,51 @@ namespace BeatSaberHitDataStorage.Managers
             _columnValues.Add(("time", time));
 
             return _dbManager.InsertEntry(DatabaseSchemas.BombHitsTableName, _columnValues);
+        }
+
+        private long PrepareDatabaseBeatmapEntry()
+        {
+            string hash = Collections.hashForLevelID(_difficultyBeatmap.level.levelID);
+            string characteristic = _difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName;
+            string difficulty = _difficultyBeatmap.difficulty.SerializedName();
+
+            _columnValues.Clear();
+            _columnValues.Add(("level_hash", hash));
+            _columnValues.Add(("characteristic", characteristic));
+            _columnValues.Add(("difficulty", difficulty));
+
+            long id = _dbManager.FindEntryID(DatabaseSchemas.BeatmapsTableName, _columnValues);
+
+            if (id < 0)
+            {
+                _columnValues.Add(("song_name", _difficultyBeatmap.level.songName));
+                _columnValues.Add(("song_author_name", _difficultyBeatmap.level.songAuthorName));
+                _columnValues.Add(("level_author_name", _difficultyBeatmap.level.levelAuthorName));
+                _columnValues.Add(("length", _difficultyBeatmap.level.songDuration));
+                _columnValues.Add(("note_count", _difficultyBeatmap.beatmapData.cuttableNotesType));
+
+                id = _dbManager.InsertEntry(DatabaseSchemas.BeatmapsTableName, _columnValues);
+            }
+
+            return id;
+        }
+
+        private long PrepareDatabasePlaysEntry()
+        {
+            _columnValues.Clear();
+            _columnValues.Add(("beatmap_id", _beatmapRowID));
+            _columnValues.Add(("play_datetime", DateTime.Now));
+            _columnValues.Add(("completed", 0));
+
+            return _dbManager.InsertEntry(DatabaseSchemas.PlaysTableName, _columnValues);
+        }
+
+        private void OnLevelFinished()
+        {
+            _columnValues.Clear();
+            _columnValues.Add(("completed", 1));
+
+            _dbManager.UpdateEntry(DatabaseSchemas.PlaysTableName, _playRowID, _columnValues);
         }
     }
 }
