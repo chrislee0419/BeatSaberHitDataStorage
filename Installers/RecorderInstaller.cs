@@ -8,6 +8,7 @@ namespace BeatSaberHitDataStorage.Installers
         public override void InstallBindings()
         {
             Container.BindInterfacesAndSelfTo<DatabaseManager>().AsSingle();
+            Container.BindInterfacesAndSelfTo<PlayDataManager>().AsSingle();
             Container.BindInterfacesAndSelfTo<HitDataManager>().AsSingle();
         }
     }

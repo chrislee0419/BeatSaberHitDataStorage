@@ -7,15 +7,15 @@ namespace BeatSaberHitDataStorage.Managers
     internal class HitDataManager : IInitializable, IDisposable
     {
         private IScoreController _scoreController;
-        private DatabaseManager _dbManager;
+        private PlayDataManager _playDataManager;
 
         private Stack<SwingRatingHandler> _swingRatingHandlerPool;
 
         [Inject]
-        public HitDataManager(IScoreController scoreController, DatabaseManager dbManager, IDifficultyBeatmap difficultyBeatmap)
+        public HitDataManager(IScoreController scoreController, PlayDataManager playDataManager, IDifficultyBeatmap difficultyBeatmap)
         {
             _scoreController = scoreController;
-            _dbManager = dbManager;
+            _playDataManager = playDataManager;
 
             int density = Convert.ToInt32(difficultyBeatmap.beatmapData.cuttableNotesType / difficultyBeatmap.level.songDuration);
 
@@ -44,7 +44,7 @@ namespace BeatSaberHitDataStorage.Managers
             if (noteData.cutDirection == NoteCutDirection.None || noteData.colorType == ColorType.None)
             {
                 // bomb hit
-                _dbManager.RecordBombHitData(noteData.time);
+                _playDataManager.RecordBombHitData(noteData.time);
             }
             else if (noteCutInfo.allIsOK)
             {
@@ -58,7 +58,7 @@ namespace BeatSaberHitDataStorage.Managers
             }
             else
             {
-                _dbManager.RecordNoteHitData(noteData.time, 0, 0, 0, 0, 0, noteCutInfo.timeDeviation, noteCutInfo.cutDirDeviation);
+                _playDataManager.RecordNoteHitData(noteData.time, 0, 0, 0, 0, 0, noteCutInfo.timeDeviation, noteCutInfo.cutDirDeviation);
             }
         }
 
@@ -68,7 +68,7 @@ namespace BeatSaberHitDataStorage.Managers
             if (noteData.cutDirection == NoteCutDirection.None || noteData.colorType == ColorType.None)
                 return;
 
-            _dbManager.RecordNoteHitData(noteData.time, 0, 1, 0, 0, 0, 0, 0);
+            _playDataManager.RecordNoteHitData(noteData.time, 0, 1, 0, 0, 0, 0, 0);
         }
 
         private class SwingRatingHandler : ISaberSwingRatingCounterDidFinishReceiver
@@ -94,7 +94,7 @@ namespace BeatSaberHitDataStorage.Managers
                     out int afterCutRawScore,
                     out int cutDistanceRawScore);
 
-                _hitDataManager._dbManager.RecordNoteHitData(
+                _hitDataManager._playDataManager.RecordNoteHitData(
                     _time,
                     1,
                     0,

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 
 namespace BeatSaberHitDataStorage
@@ -13,60 +12,54 @@ namespace BeatSaberHitDataStorage
 
         public static readonly Dictionary<string, string> CreateTableStatements;
 
-        public static readonly Dictionary<string, Dictionary<string, Type>> TableSchemas = new Dictionary<string, Dictionary<string, Type>>
+        public static readonly Dictionary<string, Dictionary<string, string>> TableSchemas = new Dictionary<string, Dictionary<string, string>>
         {
-            { BeatmapsTableName, new Dictionary<string, Type>
+            { BeatmapsTableName, new Dictionary<string, string>
                 {
-                    { "level_hash", typeof(string) },
-                    { "song_name", typeof(string) },
-                    { "song_author_name", typeof(string) },
-                    { "level_author_name", typeof(string) },
-                    { "length", typeof(float) },
-                    { "characteristic", typeof(string) },
-                    { "difficulty", typeof(string) },
-                    { "note_count", typeof(int) }
+                    { "level_hash", "TEXT" },
+                    { "song_name", "TEXT" },
+                    { "song_author_name", "TEXT" },
+                    { "level_author_name", "TEXT" },
+                    { "length", "REAL" },
+                    { "characteristic", "TEXT" },
+                    { "difficulty", "TEXT" },
+                    { "note_count", "INT" }
                 }
             },
-            { PlaysTableName, new Dictionary<string, Type>
+
+            { PlaysTableName, new Dictionary<string, string>
                 {
-                    { "beatmap_id", typeof(int) },
-                    { "play_datetime", typeof(DateTime) }
+                    { "beatmap_id", "INT" },
+                    { "play_datetime", "TEXT" }
                 }
             },
-            { NoteHitsTableName, new Dictionary<string, Type>
+
+            { NoteHitsTableName, new Dictionary<string, string>
                 {
-                    { "play_id", typeof(int) },
-                    { "time", typeof(float) },
-                    { "valid_hit", typeof(int) },
-                    { "is_miss", typeof(int) },
-                    { "before_cut_score", typeof(int) },
-                    { "after_cut_score", typeof(int) },
-                    { "accuracy_score", typeof(int) },
-                    { "time_deviation", typeof(float) },
-                    { "dir_deviation", typeof(float) }
+                    { "play_id", "INT" },
+                    { "time", "REAL" },
+                    { "valid_hit", "INT" },
+                    { "is_miss", "INT" },
+                    { "before_cut_score", "INT" },
+                    { "after_cut_score", "INT" },
+                    { "accuracy_score", "INT" },
+                    { "time_deviation", "REAL" },
+                    { "dir_deviation", "REAL" }
                 }
             },
-            { BombHitsTableName, new Dictionary<string, Type>
+            { BombHitsTableName, new Dictionary<string, string>
                 {
-                    { "play_id", typeof(int) },
-                    { "time", typeof(float) }
+                    { "play_id", "INT" },
+                    { "time", "REAL" }
                 }
             }
         };
 
-        public static readonly Dictionary<string, (string, string)> ForeignKeyConstraints = new Dictionary<string, (string, string)>
+        private static readonly Dictionary<string, (string, string)> ForeignKeyConstraints = new Dictionary<string, (string, string)>
         {
             { PlaysTableName, ("beatmap_id", BeatmapsTableName) },
             { NoteHitsTableName, ("play_id", PlaysTableName) },
             { BombHitsTableName, ("play_id", PlaysTableName) }
-        };
-
-        private static readonly Dictionary<Type, string> TypeMapping = new Dictionary<Type, string>
-        {
-            { typeof(string), "TEXT" },
-            { typeof(int), "INTEGER" },
-            { typeof(float), "REAL" },
-            { typeof(DateTime), "TEXT" }
         };
 
         static DatabaseSchemas()
@@ -83,12 +76,12 @@ namespace BeatSaberHitDataStorage
             sb.Append(tableName);
             sb.Append("(id INTEGER PRIMARY KEY");
 
-            foreach ((string columnName, Type type) in TableSchemas[tableName])
+            foreach ((string columnName, string type) in TableSchemas[tableName])
             {
                 sb.Append(", ");
                 sb.Append(columnName);
                 sb.Append(" ");
-                sb.Append(TypeMapping[type]);
+                sb.Append(type);
             }
 
             if (ForeignKeyConstraints.TryGetValue(tableName, out (string keyColumnName, string parentTableName) foreignKey))

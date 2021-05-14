@@ -125,6 +125,7 @@
     <Compile Include="DatabaseSchemas.cs" />
     <Compile Include="Managers\HitDataManager.cs" />
     <Compile Include="Managers\DatabaseManager.cs" />
+    <Compile Include="Managers\PlayDataManager.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Installers\RecorderInstaller.cs" />
