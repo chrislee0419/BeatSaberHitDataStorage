@@ -123,7 +123,7 @@ namespace BeatSaberHitDataStorage.Managers
 
             StringBuilder sb = new StringBuilder("UPDATE ");
             sb.Append(tableName);
-            sb.Append("SET ");
+            sb.Append(" SET ");
 
             _dbCommand.Parameters.Clear();
             foreach ((string columnName, object value) in updateValues)
