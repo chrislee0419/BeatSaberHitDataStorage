@@ -55,11 +55,23 @@ namespace BeatSaberHitDataStorage.Managers
                 else
                     handler = _swingRatingHandlerPool.Pop();
 
-                handler.Prepare(noteData.time, in noteCutInfo);
+                handler.Prepare(noteData.time, noteData, in noteCutInfo);
             }
             else
             {
-                _playDataManager.RecordNoteHitData(noteData.time, 0, 0, 0, 0, 0, noteCutInfo.timeDeviation, noteCutInfo.cutDirDeviation);
+                _playDataManager.RecordNoteHitData(
+                    noteData.time,
+                    0,
+                    0,
+                    IsRightHandedNote(noteData),
+                    GetNoteCutDirectionString(noteData),
+                    noteData.lineIndex,
+                    (int)noteData.noteLineLayer,
+                    0,
+                    0,
+                    0,
+                    noteCutInfo.timeDeviation,
+                    noteCutInfo.cutDirDeviation);
             }
         }
 
@@ -69,15 +81,35 @@ namespace BeatSaberHitDataStorage.Managers
             if (noteData.cutDirection == NoteCutDirection.None || noteData.colorType == ColorType.None)
                 return;
 
-            _playDataManager.RecordNoteHitData(noteData.time, 0, 1, 0, 0, 0, 0, 0);
+            _playDataManager.RecordNoteHitData(
+                noteData.time,
+                0,
+                1,
+                IsRightHandedNote(noteData),
+                GetNoteCutDirectionString(noteData),
+                noteData.lineIndex,
+                (int)noteData.noteLineLayer,
+                0,
+                0,
+                0,
+                0,
+                0);
         }
+
+        private static int IsRightHandedNote(NoteData noteData) => noteData.colorType == ColorType.ColorB ? 1 : 0;
+
+        private static string GetNoteCutDirectionString(NoteData noteData) => PlayDataManager.GetNoteCutDirectionString(noteData.cutDirection);
 
         private class SwingRatingHandler : ISaberSwingRatingCounterDidFinishReceiver
         {
             private HitDataManager _hitDataManager;
 
-            private float _time;
             private float _cutDistanceToCenter;
+            private float _time;
+            private int _isRightHandNote;
+            private string _cutDirectionString;
+            private int _lineIndex;
+            private int _lineLayer;
             private float _timeDeviation;
             private float _directionDeviation;
 
@@ -99,6 +131,10 @@ namespace BeatSaberHitDataStorage.Managers
                     _time,
                     1,
                     0,
+                    _isRightHandNote,
+                    _cutDirectionString,
+                    _lineIndex,
+                    _lineLayer,
                     beforeCutRawScore,
                     afterCutRawScore,
                     cutDistanceRawScore,
@@ -109,10 +145,14 @@ namespace BeatSaberHitDataStorage.Managers
                 _hitDataManager._swingRatingHandlerPool.Push(this);
             }
 
-            public void Prepare(float time, in NoteCutInfo noteCutInfo)
+            public void Prepare(float time, NoteData noteData, in NoteCutInfo noteCutInfo)
             {
-                _time = time;
                 _cutDistanceToCenter = noteCutInfo.cutDistanceToCenter;
+                _time = time;
+                _isRightHandNote = IsRightHandedNote(noteData);
+                _cutDirectionString = GetNoteCutDirectionString(noteData);
+                _lineIndex = noteData.lineIndex;
+                _lineLayer = (int)noteData.noteLineLayer;
                 _timeDeviation = noteCutInfo.timeDeviation;
                 _directionDeviation = noteCutInfo.cutDirDeviation;
 

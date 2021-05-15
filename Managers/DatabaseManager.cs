@@ -32,7 +32,7 @@ namespace BeatSaberHitDataStorage.Managers
                 {
                     if (!CheckDatabaseTableExists(dbCommand, tableName))
                     {
-                        dbCommand.CommandText = DatabaseSchemas.CreateTableStatements[tableName];
+                        dbCommand.CommandText = DatabaseSchemas.BuildCreateTableStatement(tableName);
                         dbCommand.ExecuteNonQuery();
                     }
                 }
@@ -51,6 +51,40 @@ namespace BeatSaberHitDataStorage.Managers
             }
 
             _dbConnection.Dispose();
+        }
+
+        public List<Dictionary<string, object>> GetRowsFromTable(string tableName)
+        {
+            PrepareAndCheckTransaction(false);
+
+            StringBuilder sb = new StringBuilder("SELECT * FROM ");
+            sb.Append(tableName);
+
+            _dbCommand.CommandText = sb.ToString();
+
+            var reader = _dbCommand.ExecuteReader();
+            var results = new List<Dictionary<string, object>>();
+            if (reader.HasRows)
+            {
+                var columns = DatabaseSchemas.TableSchemas[tableName];
+                while (reader.Read())
+                {
+                    var rowResults = new Dictionary<string, object>(columns.Count + 1);
+                    rowResults.Add("id", reader.GetValue(0));
+
+                    for (int i = 0; i < columns.Count; ++i)
+                    {
+                        (string columnName, _) = columns[i];
+                        rowResults.Add(columnName, reader.GetValue(i + 1));
+                    }
+
+                    results.Add(rowResults);
+                }
+            }
+
+            reader.Close();
+
+            return results;
         }
 
         public long FindEntryID(string tableName, IEnumerable<(string, object)> identifyingValues)
