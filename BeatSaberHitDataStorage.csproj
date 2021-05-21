@@ -130,6 +130,7 @@
     <Compile Include="PluginConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Installers\RecorderInstaller.cs" />
+    <Compile Include="Utilities\GameplayModifierHelperUtilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="manifest.json" />

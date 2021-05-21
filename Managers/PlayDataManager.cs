@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Zenject;
 using SongCore;
+using BeatSaberHitDataStorage.Utilities;
 
 namespace BeatSaberHitDataStorage.Managers
 {
     internal class PlayDataManager : IInitializable, IDisposable
     {
+        private GameplayCoreSceneSetupData _gameplayCoreSceneSetupData;
         private ILevelEndActions _levelEndActions;
         private IDifficultyBeatmap _difficultyBeatmap;
+
         private DatabaseManager _dbManager;
 
         private long _beatmapRowID = -1;
@@ -18,10 +20,16 @@ namespace BeatSaberHitDataStorage.Managers
         private List<(string, object)> _columnValues = new List<(string, object)>(DatabaseSchemas.TableSchemas[DatabaseSchemas.NoteHitsTableName].Count);
 
         private static Dictionary<(int, string, int, int), long> _noteInfosMapping = null;
+        private static Dictionary<string, long> _gameplayModifiersMapping = null;
 
         [Inject]
-        public PlayDataManager(ILevelEndActions levelEndActions, IDifficultyBeatmap difficultyBeatmap, DatabaseManager databaseManager)
+        public PlayDataManager(
+            GameplayCoreSceneSetupData gameplayCoreSceneSetupData,
+            ILevelEndActions levelEndActions,
+            IDifficultyBeatmap difficultyBeatmap,
+            DatabaseManager databaseManager)
         {
+            _gameplayCoreSceneSetupData = gameplayCoreSceneSetupData;
             _levelEndActions = levelEndActions;
             _difficultyBeatmap = difficultyBeatmap;
             _dbManager = databaseManager;
@@ -30,9 +38,11 @@ namespace BeatSaberHitDataStorage.Managers
         public void Initialize()
         {
             PrepareNoteInfosTable();
+            PrepareModifiersTable();
 
             _beatmapRowID = PrepareDatabaseBeatmapEntry();
             _playRowID = PrepareDatabasePlaysEntry();
+            PreparePlayModifiersEntries();
 
             _levelEndActions.levelFinishedEvent += OnLevelFinished;
         }
@@ -92,6 +102,22 @@ namespace BeatSaberHitDataStorage.Managers
             return _dbManager.InsertEntry(DatabaseSchemas.BombHitsTableName, _columnValues);
         }
 
+        private void PrepareNoteInfosTable()
+        {
+            if (_noteInfosMapping != null)
+                return;
+
+            _noteInfosMapping = new Dictionary<(int, string, int, int), long>();
+
+            // check database for mapping
+            var noteInfos = _dbManager.GetRowsFromTable(DatabaseSchemas.NoteInfosTableName);
+            foreach (var noteInfo in noteInfos)
+            {
+                var tuple = ((int)noteInfo["is_right_hand"], (string)noteInfo["note_direction"], (int)noteInfo["line_index"], (int)noteInfo["line_layer"]);
+                _noteInfosMapping[tuple] = (long)noteInfo["id"];
+            }
+        }
+
         private long PrepareDatabaseBeatmapEntry()
         {
             string hash = Collections.hashForLevelID(_difficultyBeatmap.level.levelID);
@@ -122,19 +148,31 @@ namespace BeatSaberHitDataStorage.Managers
             return id;
         }
 
-        private void PrepareNoteInfosTable()
+        private void PrepareModifiersTable()
         {
-            if (_noteInfosMapping != null)
-                return;
-
-            _noteInfosMapping = new Dictionary<(int, string, int, int), long>();
-
-            // check database for mapping
-            var noteInfos = _dbManager.GetRowsFromTable(DatabaseSchemas.NoteInfosTableName);
-            foreach (var noteInfo in noteInfos)
+            if (_gameplayModifiersMapping == null)
             {
-                var tuple = ((int)noteInfo["is_right_hand"], (string)noteInfo["note_direction"], (int)noteInfo["line_index"], (int)noteInfo["line_layer"]);
-                _noteInfosMapping[tuple] = (long)noteInfo["id"];
+                var modifiers = _dbManager.GetRowsFromTable(DatabaseSchemas.ModifiersTableName);
+                var allModifiers = GameplayModifierHelperUtilities.AllModifiers;
+
+                if (modifiers.Count < allModifiers.Count)
+                {
+                    _gameplayModifiersMapping = new Dictionary<string, long>(allModifiers.Count);
+
+                    foreach (var modifier in GameplayModifierHelperUtilities.AllModifiers)
+                    {
+                        _columnValues.Clear();
+                        _columnValues.Add(("modifier_name", modifier));
+                        _gameplayModifiersMapping[modifier] = _dbManager.InsertEntry(DatabaseSchemas.ModifiersTableName, _columnValues, true);
+                    }
+                }
+                else
+                {
+                    _gameplayModifiersMapping = new Dictionary<string, long>(modifiers.Count);
+
+                    foreach (var row in modifiers)
+                        _gameplayModifiersMapping[(string)row["modifier_name"]] = (long)row["id"];
+                }
             }
         }
 
@@ -142,10 +180,36 @@ namespace BeatSaberHitDataStorage.Managers
         {
             _columnValues.Clear();
             _columnValues.Add(("beatmap_id", _beatmapRowID));
+            _columnValues.Add(("is_practice", _gameplayCoreSceneSetupData.practiceSettings != null ? 1 : 0));
             _columnValues.Add(("play_datetime", DateTime.Now));
             _columnValues.Add(("completed", 0));
 
             return _dbManager.InsertEntry(DatabaseSchemas.PlaysTableName, _columnValues);
+        }
+
+        private void PreparePlayModifiersEntries()
+        {
+            foreach (var modifier in GameplayModifierHelperUtilities.GetGameplayModifierStrings(_gameplayCoreSceneSetupData.gameplayModifiers))
+            {
+                _columnValues.Clear();
+
+                if (_gameplayModifiersMapping.TryGetValue(modifier, out long modifierID))
+                {
+                    _columnValues.Add(("modifier_id", modifierID));
+                }
+                else
+                {
+                    _columnValues.Add(("modifier_name", modifier));
+                    modifierID = _dbManager.InsertEntry(DatabaseSchemas.ModifiersTableName, _columnValues);
+
+                    _columnValues.Clear();
+                    _columnValues.Add(("modifier_id", modifierID));
+                }
+
+                _columnValues.Add(("play_id", _playRowID));
+
+                _dbManager.InsertEntry(DatabaseSchemas.PlayModifiersTableName, _columnValues);
+            }
         }
 
         private void OnLevelFinished()

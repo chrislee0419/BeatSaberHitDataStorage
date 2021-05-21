@@ -6,7 +6,9 @@ namespace BeatSaberHitDataStorage
     internal static class DatabaseSchemas
     {
         public const string BeatmapsTableName = "beatmaps";
+        public const string ModifiersTableName = "modifiers";
         public const string PlaysTableName = "plays";
+        public const string PlayModifiersTableName = "play_modifiers";
         public const string NoteInfosTableName = "note_infos";
         public const string NoteHitsTableName = "note_hits";
         public const string BombHitsTableName = "bomb_hits";
@@ -27,11 +29,25 @@ namespace BeatSaberHitDataStorage
                 }
             },
 
+            { ModifiersTableName, new List<(string, string)>
+                {
+                    ( "modifier_name", "TEXT" )
+                }
+            },
+
             { PlaysTableName, new List<(string, string)>
                 {
                     ( "beatmap_id", "INT" ),
                     ( "play_datetime", "TEXT" ),
+                    ( "is_practice", "INT" ),
                     ( "completed", "INT" )
+                }
+            },
+
+            { PlayModifiersTableName, new List<(string, string)>
+                {
+                    ( "play_id", "INT" ),
+                    ( "modifier_id", "INT" )
                 }
             },
 
@@ -76,6 +92,8 @@ namespace BeatSaberHitDataStorage
         private static readonly Dictionary<(string, string), string> ReferenceConstraints = new Dictionary<(string, string), string>
         {
             { (PlaysTableName, "beatmap_id"), BeatmapsTableName },
+            { (PlayModifiersTableName, "play_id"), PlaysTableName },
+            { (PlayModifiersTableName, "modifier_id"), ModifiersTableName },
             { (NoteHitsTableName, "play_id"), PlaysTableName },
             { (NoteHitsTableName, "note_info_id"), NoteInfosTableName },
             { (BombHitsTableName, "play_id"), PlaysTableName },
@@ -84,6 +102,7 @@ namespace BeatSaberHitDataStorage
 
         private static readonly Dictionary<string, string[]> UniqueConstraints = new Dictionary<string, string[]>
         {
+            { ModifiersTableName, new string[] { "modifier_name" } },
             { NoteInfosTableName, new string[] { "is_right_hand", "note_direction", "line_index", "line_layer" } }
         };
 
