@@ -116,11 +116,16 @@ namespace BeatSaberHitDataStorage.Managers
             return result != null ? (long)result : -1L;
         }
 
-        public long InsertEntry(string tableName, IEnumerable<(string, object)> values)
+        public long InsertEntry(string tableName, IEnumerable<(string, object)> values, bool ignoreOnConflict = false)
         {
             PrepareAndCheckTransaction();
 
-            StringBuilder sb = new StringBuilder("INSERT INTO ");
+            StringBuilder sb = new StringBuilder("INSERT ");
+
+            if (ignoreOnConflict)
+                sb.Append("OR IGNORE ");
+
+            sb.Append("INTO ");
             sb.Append(tableName);
             sb.Append("(id");
             foreach ((string columnName, object value) in values)
@@ -147,8 +152,15 @@ namespace BeatSaberHitDataStorage.Managers
 
             _dbCommand.ExecuteNonQuery();
 
-            _dbCommand.CommandText = "SELECT last_insert_rowid()";
-            return (long)_dbCommand.ExecuteScalar();
+            if (ignoreOnConflict)
+            {
+                return FindEntryID(tableName, values);
+            }
+            else
+            {
+                _dbCommand.CommandText = "SELECT last_insert_rowid()";
+                return (long)_dbCommand.ExecuteScalar();
+            }
         }
 
         public void UpdateEntry(string tableName, long entryID, IEnumerable<(string, object)> updateValues)
