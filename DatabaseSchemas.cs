@@ -63,11 +63,10 @@ namespace BeatSaberHitDataStorage
             { NoteHitsTableName, new List<(string, string)>
                 {
                     ( "play_id", "INT" ),
+                    ( "note_info_id", "TEXT" ),
                     ( "time", "REAL" ),
                     ( "valid_hit", "INT" ),
                     ( "is_miss", "INT" ),
-                    ( "is_right_hand", "INT" ),
-                    ( "note_info_id", "TEXT" ),
                     ( "before_cut_score", "INT" ),
                     ( "after_cut_score", "INT" ),
                     ( "accuracy_score", "INT" )

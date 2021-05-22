@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Zenject;
+using static BeatSaberHitDataStorage.Managers.PlayDataManager;
 
 namespace BeatSaberHitDataStorage.Managers
 {
@@ -95,10 +96,6 @@ namespace BeatSaberHitDataStorage.Managers
                 0,
                 0);
         }
-
-        private static int IsRightHandedNote(NoteData noteData) => noteData.colorType == ColorType.ColorB ? 1 : 0;
-
-        private static string GetNoteCutDirectionString(NoteData noteData) => PlayDataManager.GetNoteCutDirectionString(noteData.cutDirection);
 
         private class SwingRatingHandler : ISaberSwingRatingCounterDidFinishReceiver
         {

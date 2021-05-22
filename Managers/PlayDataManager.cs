@@ -70,10 +70,10 @@ namespace BeatSaberHitDataStorage.Managers
 
             _columnValues.Clear();
             _columnValues.Add(("play_id", _playRowID));
+            _columnValues.Add(("note_info_id", noteInfoID));
             _columnValues.Add(("time", time));
             _columnValues.Add(("valid_hit", validHit));
             _columnValues.Add(("is_miss", isMiss));
-            _columnValues.Add(("note_info_id", noteInfoID));
             _columnValues.Add(("before_cut_score", beforeCutScore));
             _columnValues.Add(("after_cut_score", afterCutScore));
             _columnValues.Add(("accuracy_score", accuracyScore));
@@ -104,17 +104,46 @@ namespace BeatSaberHitDataStorage.Managers
 
         private void PrepareNoteInfosTable()
         {
-            if (_noteInfosMapping != null)
-                return;
-
-            _noteInfosMapping = new Dictionary<(int, string, int, int), long>();
-
-            // check database for mapping
-            var noteInfos = _dbManager.GetRowsFromTable(DatabaseSchemas.NoteInfosTableName);
-            foreach (var noteInfo in noteInfos)
+            if (_noteInfosMapping == null)
             {
-                var tuple = ((int)noteInfo["is_right_hand"], (string)noteInfo["note_direction"], (int)noteInfo["line_index"], (int)noteInfo["line_layer"]);
-                _noteInfosMapping[tuple] = (long)noteInfo["id"];
+                _noteInfosMapping = new Dictionary<(int, string, int, int), long>();
+
+                // check database for existing mappings
+                var noteInfos = _dbManager.GetRowsFromTable(DatabaseSchemas.NoteInfosTableName);
+                foreach (var noteInfo in noteInfos)
+                {
+                    var tuple = (
+                        (int)noteInfo["is_right_hand"],
+                        (string)noteInfo["note_direction"],
+                        (int)noteInfo["line_index"],
+                        (int)noteInfo["line_layer"]);
+
+                    _noteInfosMapping[tuple] = (long)noteInfo["id"];
+                }
+            }
+
+            // add info from all notes in the map if necessary
+            foreach (var lineData in _difficultyBeatmap.beatmapData.beatmapLinesData)
+            {
+                foreach (var objData in lineData.beatmapObjectsData)
+                {
+                    if (objData.beatmapObjectType != BeatmapObjectType.Note)
+                        continue;
+
+                    var noteData = (NoteData)objData;
+                    var tuple = (IsRightHandedNote(noteData), GetNoteCutDirectionString(noteData), noteData.lineIndex, (int)noteData.noteLineLayer);
+
+                    if (_noteInfosMapping.ContainsKey(tuple))
+                        continue;
+
+                    _columnValues.Clear();
+                    _columnValues.Add(("is_right_hand", tuple.Item1));
+                    _columnValues.Add(("note_direction", tuple.Item2));
+                    _columnValues.Add(("line_index", tuple.Item3));
+                    _columnValues.Add(("line_layer", tuple.Item4));
+
+                    _noteInfosMapping[tuple] = _dbManager.InsertEntry(DatabaseSchemas.NoteInfosTableName, _columnValues);
+                }
             }
         }
 
@@ -219,6 +248,10 @@ namespace BeatSaberHitDataStorage.Managers
 
             _dbManager.UpdateEntry(DatabaseSchemas.PlaysTableName, _playRowID, _columnValues);
         }
+
+        public static int IsRightHandedNote(NoteData noteData) => noteData.colorType == ColorType.ColorB ? 1 : 0;
+
+        public static string GetNoteCutDirectionString(NoteData noteData) => GetNoteCutDirectionString(noteData.cutDirection);
 
         public static string GetNoteCutDirectionString(NoteCutDirection cutDirection)
         {
