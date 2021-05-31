@@ -40,7 +40,8 @@ namespace BeatSaberHitDataStorage
                     ( "beatmap_id", "INT" ),
                     ( "play_datetime", "TEXT" ),
                     ( "is_practice", "INT" ),
-                    ( "completed", "INT" )
+                    ( "completed", "INT" ),
+                    ( "failed", "INT" )
                 }
             },
 

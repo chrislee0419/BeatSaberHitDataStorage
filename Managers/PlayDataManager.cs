@@ -45,12 +45,16 @@ namespace BeatSaberHitDataStorage.Managers
             PreparePlayModifiersEntries();
 
             _levelEndActions.levelFinishedEvent += OnLevelFinished;
+            _levelEndActions.levelFailedEvent += OnLevelFailed;
         }
 
         public void Dispose()
         {
             if (_levelEndActions != null)
+            {
                 _levelEndActions.levelFinishedEvent -= OnLevelFinished;
+                _levelEndActions.levelFailedEvent -= OnLevelFailed;
+            }
         }
 
         public long RecordNoteHitData(float time, int validHit, int isMiss, int isRightHand, string noteDirection, int lineIndex, int lineLayer, int beforeCutScore, int afterCutScore, int accuracyScore, float timeDeviation, float directionDeviation)
@@ -212,6 +216,7 @@ namespace BeatSaberHitDataStorage.Managers
             _columnValues.Add(("is_practice", _gameplayCoreSceneSetupData.practiceSettings != null ? 1 : 0));
             _columnValues.Add(("play_datetime", DateTime.Now));
             _columnValues.Add(("completed", 0));
+            _columnValues.Add(("failed", 0));
 
             return _dbManager.InsertEntry(DatabaseSchemas.PlaysTableName, _columnValues);
         }
@@ -245,6 +250,14 @@ namespace BeatSaberHitDataStorage.Managers
         {
             _columnValues.Clear();
             _columnValues.Add(("completed", 1));
+
+            _dbManager.UpdateEntry(DatabaseSchemas.PlaysTableName, _playRowID, _columnValues);
+        }
+
+        private void OnLevelFailed()
+        {
+            _columnValues.Clear();
+            _columnValues.Add(("failed", 1));
 
             _dbManager.UpdateEntry(DatabaseSchemas.PlaysTableName, _playRowID, _columnValues);
         }
