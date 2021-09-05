@@ -18,7 +18,7 @@ namespace BeatSaberHitDataStorage.Managers
             _scoreController = scoreController;
             _playDataManager = playDataManager;
 
-            int density = Convert.ToInt32(difficultyBeatmap.beatmapData.cuttableNotesType / difficultyBeatmap.level.songDuration);
+            int density = Convert.ToInt32(difficultyBeatmap.beatmapData.cuttableNotesCount / difficultyBeatmap.level.songDuration);
 
             _swingRatingHandlerPool = new Stack<SwingRatingHandler>(density * 2);
             for (int i = 0; i < density; ++i)

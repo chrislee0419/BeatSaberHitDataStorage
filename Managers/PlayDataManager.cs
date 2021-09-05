@@ -173,7 +173,7 @@ namespace BeatSaberHitDataStorage.Managers
                 _columnValues.Add(("song_author_name", _difficultyBeatmap.level.songAuthorName));
                 _columnValues.Add(("level_author_name", _difficultyBeatmap.level.levelAuthorName));
                 _columnValues.Add(("length", _difficultyBeatmap.level.songDuration));
-                _columnValues.Add(("note_count", _difficultyBeatmap.beatmapData.cuttableNotesType));
+                _columnValues.Add(("note_count", _difficultyBeatmap.beatmapData.cuttableNotesCount));
 
                 id = _dbManager.InsertEntry(DatabaseSchemas.BeatmapsTableName, _columnValues);
             }
