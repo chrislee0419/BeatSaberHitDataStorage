@@ -22,7 +22,7 @@ namespace BeatSaberHitDataStorage
 
             PluginConfig.Instance = config.Generated<PluginConfig>();
 
-            zenjector.OnGame<RecorderInstaller>();
+            zenjector.Install<RecorderInstaller>(Location.GameCore);
         }
 
         [OnEnable]

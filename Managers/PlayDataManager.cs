@@ -11,6 +11,7 @@ namespace BeatSaberHitDataStorage.Managers
         private GameplayCoreSceneSetupData _gameplayCoreSceneSetupData;
         private ILevelEndActions _levelEndActions;
         private IDifficultyBeatmap _difficultyBeatmap;
+        private IReadonlyBeatmapData _beatmapData;
 
         private DatabaseManager _dbManager;
 
@@ -27,11 +28,13 @@ namespace BeatSaberHitDataStorage.Managers
             GameplayCoreSceneSetupData gameplayCoreSceneSetupData,
             ILevelEndActions levelEndActions,
             IDifficultyBeatmap difficultyBeatmap,
+            IReadonlyBeatmapData beatmapData,
             DatabaseManager databaseManager)
         {
             _gameplayCoreSceneSetupData = gameplayCoreSceneSetupData;
             _levelEndActions = levelEndActions;
             _difficultyBeatmap = difficultyBeatmap;
+            _beatmapData = beatmapData;
             _dbManager = databaseManager;
         }
 
@@ -127,27 +130,20 @@ namespace BeatSaberHitDataStorage.Managers
             }
 
             // add info from all notes in the map if necessary
-            foreach (var lineData in _difficultyBeatmap.beatmapData.beatmapLinesData)
+            foreach (var noteData in _beatmapData.GetBeatmapDataItems<NoteData>())
             {
-                foreach (var objData in lineData.beatmapObjectsData)
-                {
-                    if (objData.beatmapObjectType != BeatmapObjectType.Note)
-                        continue;
+                var tuple = (IsRightHandedNote(noteData), GetNoteCutDirectionString(noteData), noteData.lineIndex, (int)noteData.noteLineLayer);
 
-                    var noteData = (NoteData)objData;
-                    var tuple = (IsRightHandedNote(noteData), GetNoteCutDirectionString(noteData), noteData.lineIndex, (int)noteData.noteLineLayer);
+                if (_noteInfosMapping.ContainsKey(tuple))
+                    continue;
 
-                    if (_noteInfosMapping.ContainsKey(tuple))
-                        continue;
+                _columnValues.Clear();
+                _columnValues.Add(("is_right_hand", tuple.Item1));
+                _columnValues.Add(("note_direction", tuple.Item2));
+                _columnValues.Add(("line_index", tuple.Item3));
+                _columnValues.Add(("line_layer", tuple.Item4));
 
-                    _columnValues.Clear();
-                    _columnValues.Add(("is_right_hand", tuple.Item1));
-                    _columnValues.Add(("note_direction", tuple.Item2));
-                    _columnValues.Add(("line_index", tuple.Item3));
-                    _columnValues.Add(("line_layer", tuple.Item4));
-
-                    _noteInfosMapping[tuple] = _dbManager.InsertEntry(DatabaseSchemas.NoteInfosTableName, _columnValues);
-                }
+                _noteInfosMapping[tuple] = _dbManager.InsertEntry(DatabaseSchemas.NoteInfosTableName, _columnValues);
             }
         }
 
@@ -173,7 +169,7 @@ namespace BeatSaberHitDataStorage.Managers
                 _columnValues.Add(("song_author_name", _difficultyBeatmap.level.songAuthorName));
                 _columnValues.Add(("level_author_name", _difficultyBeatmap.level.levelAuthorName));
                 _columnValues.Add(("length", _difficultyBeatmap.level.songDuration));
-                _columnValues.Add(("note_count", _difficultyBeatmap.beatmapData.cuttableNotesCount));
+                _columnValues.Add(("note_count", _beatmapData.cuttableNotesCount));
 
                 id = _dbManager.InsertEntry(DatabaseSchemas.BeatmapsTableName, _columnValues);
             }
